@@ -1,0 +1,186 @@
+#ifndef _MISERE_H
+#define _MISERE_H
+
+#include "BoardGame_Classes.h"
+
+// Declare global variables for easy access across different parts of the game.
+extern bool game_over_flag;  // Flag indicating whether the game is over
+extern int total_moves;  // Counter for the total number of moves
+
+// Template class for a 3x3 Tic Tac Toe board for the Misere variant of the game
+template <typename T>
+class ThreeByThree_Misere_Board : public Board<T> {
+public:
+    ThreeByThree_Misere_Board();  // Constructor to initialize the board
+    bool update_board(int x, int y, T symbol);  // Updates the board with a given move
+    void display_board();  // Displays the current state of the board
+    bool is_win();  // Checks if there is a winner
+    bool is_draw();  // Checks if the game has ended in a draw
+    bool game_is_over();  // Determines if the game is over due to moves or win condition
+};
+
+// Template class for a player in the game
+template <typename T>
+class ThreeByThree_Player : public Player<T> {
+public:
+    ThreeByThree_Player(string name, T symbol);  // Constructor to initialize player name and symbol
+    void getmove(int& x, int& y);  // Prompts the player to input their move
+};
+
+// Template class for a random computer player
+// Generates random moves for the game.
+template <typename T>
+class ThreeByThree_Random_Player : public RandomPlayer<T> {
+public:
+    ThreeByThree_Random_Player(T symbol);  // Constructor for random computer player with the given symbol
+    void getmove(int& x, int& y);  // Generates a random move
+};
+
+//--------------------------------------- IMPLEMENTATION
+
+#include <iostream>
+#include <iomanip>
+#include <cctype>
+#include <limits>
+
+using namespace std;
+
+// Constructor for ThreeByThree_Misere_Board
+// Initializes a 3x3 board with zeros
+template <typename T>
+ThreeByThree_Misere_Board<T>::ThreeByThree_Misere_Board() {
+    this->rows = this->columns = 3;  // Set dimensions of the board
+    this->board = new char* [this->rows];  // Create the board dynamically
+    for (int i = 0; i < this->rows; i++) {
+        this->board[i] = new char[this->columns];
+        for (int j = 0; j < this->columns; j++) {
+            this->board[i][j] = 0;  // Initialize all board positions to 0 (empty)
+        }
+    }
+    this->n_moves = 0;  // Initialize move counter
+}
+
+// Updates the board at a specified position with the given mark (symbol).
+template <typename T>
+bool ThreeByThree_Misere_Board<T>::update_board(int x, int y, T mark) {
+
+    if (game_over_flag == true) {  // If the game is over, do not allow any more moves
+        return true;
+    }
+    if (this->n_moves == 9) {  // If 9 moves have been made, prevent further moves
+        this->n_moves++;
+        return true;
+    }
+
+    // Only update if move is valid and within board boundaries
+    if (!(x < 0 || x >= this->rows || y < 0 || y >= this->columns) && (this->board[x][y] == 0 || mark == 0)) {
+        if (mark == 0) {  // If mark is 0, reset the cell
+            this->n_moves--;
+            this->board[x][y] = 0;
+        }
+        else {  // If mark is not 0, update the board with the given symbol
+            this->n_moves++;
+            this->board[x][y] = toupper(mark);
+            total_moves++;  // Increment total moves counter
+        }
+        return true;
+    }
+    return false;  // If the move is invalid, return false
+}
+
+// Display the board and the pieces on it
+template <typename T>
+void ThreeByThree_Misere_Board<T>::display_board() {
+    for (int i = 0; i < this->rows; i++) {
+        cout << "\n| ";
+        for (int j = 0; j < this->columns; j++) {
+            cout << "(" << i << "," << j << ")";  // Display position of each cell
+            cout << setw(2) << this->board[i][j] << " |";  // Display the content of each cell
+        }
+        cout << "\n-----------------------------";  // Format the board layout
+    }
+    cout << endl;
+}
+
+// Check the game_over_flag for winning conditions
+template <typename T>
+bool ThreeByThree_Misere_Board<T>::is_win() {
+    if (game_over_flag == true) {  // If the game is already over, return true
+        return true;
+    }
+
+    // Check rows and columns for winning condition
+    for (int i = 0; i < this->rows; i++) {
+        if ((this->board[i][0] == this->board[i][1] && this->board[i][1] == this->board[i][2] && this->board[i][0] != 0) ||
+            (this->board[0][i] == this->board[1][i] && this->board[1][i] == this->board[2][i] && this->board[0][i] != 0)) {
+            game_over_flag = true;  // Set the game_over_flag to true if a winner is found
+        }
+    }
+
+    // Check diagonals for winning condition
+    if ((this->board[0][0] == this->board[1][1] && this->board[1][1] == this->board[2][2] && this->board[0][0] != 0) ||
+        (this->board[0][2] == this->board[1][1] && this->board[1][1] == this->board[2][0] && this->board[0][2] != 0)) {
+        game_over_flag = true;  // Set the game_over_flag to true if a winner is found
+    }
+
+    return false;
+}
+
+// Return true if 9 moves are done and no winner
+template <typename T>
+bool ThreeByThree_Misere_Board<T>::is_draw() {
+    return (this->n_moves == 9 && !is_win());  // Return true if there is no winner and all moves are made
+}
+
+// Determines if the game is over due to win, draw, or move limit.
+template <typename T>
+bool ThreeByThree_Misere_Board<T>::game_is_over() {
+    return total_moves > 9;  // The game ends if more than 9 moves are made
+}
+
+//--------------------------------------
+
+// Constructor for ThreeByThree_Player
+template <typename T>
+ThreeByThree_Player<T>::ThreeByThree_Player(string name, T symbol) : Player<T>(name, symbol) {}
+
+// Prompts the player to input their move coordinates.
+template <typename T>
+void ThreeByThree_Player<T>::getmove(int& x, int& y) {
+    if (total_moves == 9 || game_over_flag == true) {  // If the game is over, no more moves are allowed
+        return;
+    }
+    cout << "Please enter your move x and y (0 to 2) separated by spaces:\n ";
+    while (true)
+    {
+        if (cin >> x >> y) {
+            if (x < 0 || y < 0 || x > 2 || y > 2) {  // Check if the input is valid
+                cout << "Invalid input. Please enter a positive integer input (0 to 2).\n";
+                cin >> x >> y;
+            }
+            break;
+        }00
+        else {
+            cout << "Invalid input. Please enter a valid input.\n";
+            cin.clear();
+            cin.ignore(numeric_limits<streamsize>::max(), '\n');  // Clear invalid input
+        }
+    }
+}
+
+// Constructor for ThreeByThree_Random_Player
+template <typename T>
+ThreeByThree_Random_Player<T>::ThreeByThree_Random_Player(T symbol) : RandomPlayer<T>(symbol) {
+    this->dimension = 3;  // Set the board dimension
+    this->name = "Computer";  // Set the player's name
+    srand(static_cast<unsigned int>(time(0)));  // Seed the random number generator
+}
+
+// Generates a random move for the computer player
+template <typename T>
+void ThreeByThree_Random_Player<T>::getmove(int& x, int& y) {
+    x = rand() % this->dimension;  // Random number between 0 and 2 for x-coordinate
+    y = rand() % this->dimension;  // Random number between 0 and 2 for y-coordinate
+}
+
+#endif //_MISERE_H
