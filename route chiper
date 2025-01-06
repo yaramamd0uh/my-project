@@ -1,0 +1,155 @@
+#include <iostream>
+#include <vector>
+#include <string>
+
+using namespace std;
+
+// Function to encrypt the message using Route Cipher
+void encryptRouteCipher() {
+    string message;
+    cout << "enter your message: ";
+    getline(cin, message); // Input the message
+    cout << "enter your integer key: ";
+    int key;
+    cin >> key; // Input the key for encryption
+    string newMessage;
+    for (char c : message) { // Convert message to uppercase and remove non-alphabetic characters
+        if (isalpha(c))
+            newMessage += toupper(c);
+    }
+    int rows;
+    if (newMessage.size() % key == 0)
+        rows = newMessage.size() / key;
+    else
+        rows = ((newMessage.size() / key) + 1);
+    int cols = key;
+    vector<vector<char>> matrix(rows, vector<char>(cols)); // Create matrix to store characters
+
+    // Filling the matrix
+    int x = 0;
+    for (int i = 0; i < rows; ++i) {
+        for (int j = 0; j < cols; ++j) {
+            if (x < newMessage.size()) {
+                matrix[i][j] = newMessage[x++];
+            }
+            else {
+                matrix[i][j] = 'X'; // Fill empty spaces with 'X'
+            }
+        }
+    }
+
+    // Reading the matrix in a clockwise spiral path starting from the top right corner
+    string encryptedMessage;
+    int topRow = 0, bottomRow = rows - 1, leftCol = 0, rightCol = cols - 1;
+    while (topRow <= bottomRow && leftCol <= rightCol) {
+
+        for (int i = topRow; i <= bottomRow; ++i) {
+            if (matrix[i][rightCol] == '#')
+                continue;
+            encryptedMessage += matrix[i][rightCol]; // Read characters from right column
+            matrix[i][rightCol] = '#'; // Mark visited characters
+        }
+        --rightCol;
+
+        for (int i = rightCol; i >= leftCol; --i) {
+            if (matrix[bottomRow][i] == '#')
+                continue;
+            encryptedMessage += matrix[bottomRow][i]; // Read characters from bottom row
+            matrix[bottomRow][i] = '#';
+        }
+        --bottomRow;
+
+        for (int i = bottomRow; i >= topRow; --i) {
+            if (matrix[i][leftCol] == '#')
+                continue;
+            encryptedMessage += matrix[i][leftCol]; // Read characters from left column
+            matrix[i][leftCol] = '#';
+        }
+        ++leftCol;
+
+        for (int i = leftCol; i <= rightCol; ++i) {
+            if (matrix[topRow][i] == '#')
+                continue;
+            encryptedMessage += matrix[topRow][i]; // Read characters from top row
+            matrix[topRow][i] = '#';
+        }
+        ++topRow;
+
+    }
+    cout << "encrypted message is: " << encryptedMessage;
+}
+
+
+
+// Function to decrypt the message using Route Cipher
+void decryptRouteCipher() {
+    cout << "enter your message: " << endl;
+    string message;
+    getline(cin, message); // Input the encrypted message
+    cout << "enter your integer key: " << endl;
+    int key;
+    cin >> key; // Input the key for decryption
+
+    string newMessage;
+    for (char c : message) { // Convert message to uppercase and remove non-alphabetic characters
+        if (isalpha(c))
+            newMessage += toupper(c);
+    }
+    int rows;
+    if (newMessage.size() % key == 0)
+        rows = newMessage.size() / key;
+    else
+        rows = ((newMessage.size() / key) + 1);
+    int cols = key;
+    vector<vector<char>> matrix(rows, vector<char>(cols)); // Create matrix to store characters
+
+    for (int i = 0; i < rows; ++i) {
+        for (int j = 0; j < cols; ++j) {
+            matrix[i][j] = '#'; // Initialize matrix with '#' characters
+        }
+    }
+
+    string decryptedMessage = newMessage; // Initialize decrypted message
+    int topRow = 0, bottomRow = rows - 1, leftCol = 0, rightCol = cols - 1, count = 0;
+    while (topRow <= bottomRow && leftCol <= rightCol) {
+        // Right column traversal
+        for (int i = topRow; i <= bottomRow; ++i) {
+            if (matrix[i][rightCol] == '#') {
+                matrix[i][rightCol] = decryptedMessage[count++];
+            }
+        }
+        --rightCol;
+
+        // Down row traversal
+        for (int i = rightCol; i >= leftCol; --i) {
+            if (matrix[bottomRow][i] == '#') {
+                matrix[bottomRow][i] = decryptedMessage[count++];
+            }
+        }
+        --bottomRow;
+
+        // Left column traversal
+        for (int i = bottomRow; i >= topRow; --i) {
+            if (matrix[i][leftCol] == '#') {
+                matrix[i][leftCol] = decryptedMessage[count++]; 
+            }
+        }
+        ++leftCol;
+
+        // Up row traversal
+        for (int i = leftCol; i <= rightCol; ++i) {
+            if (matrix[topRow][i] == '#') {
+                matrix[topRow][i] = decryptedMessage[count++]; 
+            }
+        }
+        ++topRow;
+    }
+
+    // Output the decrypted message
+    for (int i = 0; i < rows; ++i) {
+        for (int j = 0; j < cols; ++j) {
+            cout << matrix[i][j];
+        }
+    }
+}
+
