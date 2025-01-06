@@ -1,0 +1,197 @@
+#ifndef _5X5_X_O_H
+#define _5X5_X_O_H
+
+#include "BoardGame_Classes.h"
+extern string playerXName;  // External variable to hold Player X's name
+extern string playerOName;  // External variable to hold Player O's name
+
+// Template class for the 5x5 board, derived from the Board class
+template <typename T>
+class FiveByFive_Board : public Board<T> {
+public:
+    FiveByFive_Board();  // Constructor for the 5x5 board
+    bool update_board(int x, int y, T symbol);  // Method to update the board with player's move
+    void display_board();  // Method to display the current board
+    int count_three_in_a_row(T symbol);  // Method to count the number of 3-in-a-row sequences for a player
+    bool game_is_over();  // Method to check if the game is over
+    bool is_win();  // Method to check if a player has won
+    bool is_draw();  // Method to check if the game is a draw
+};
+
+// Template class for a player in the 5x5 game, derived from the Player class
+template <typename T>
+class FiveByFive_Player : public Player<T> {
+public:
+    FiveByFive_Player(string name, T symbol);  // Constructor to initialize player with name and symbol
+    void getmove(int& x, int& y);  // Method to get the player's move (x, y)
+};
+
+// Template class for a random player in the 5x5 game, derived from the RandomPlayer class
+template <typename T>
+class FiveByFive_Random_Player : public RandomPlayer<T> {
+public:
+    FiveByFive_Random_Player(T symbol);  // Constructor to initialize random player with symbol
+    void getmove(int& x, int& y);  // Method to get the random player's move (x, y)
+};
+
+//--------------------------------------- IMPLEMENTATION
+
+#include <iostream>
+#include <iomanip>
+#include <cstdlib>  // For srand(), rand()
+#include <ctime>    // For time()
+
+using namespace std;
+
+// Constructor for FiveByFive_Board
+template <typename T>
+FiveByFive_Board<T>::FiveByFive_Board() {
+    this->rows = this->columns = 5;  // Set the board dimensions to 5x5
+    this->board = new char* [this->rows];  // Dynamically allocate memory for the board
+    for (int i = 0; i < this->rows; i++) {
+        this->board[i] = new char[this->columns];  // Allocate memory for each row
+        for (int j = 0; j < this->columns; j++) {
+            this->board[i][j] = 0;  // Initialize all cells to 0 (empty)
+        }
+    }
+    this->n_moves = 0;  // Initialize the number of moves to 0
+}
+
+// Update the board with a player's move
+template <typename T>
+bool FiveByFive_Board<T>::update_board(int x, int y, T mark) {
+    if (!(x < 0 || x >= this->rows || y < 0 || y >= this->columns) && this->board[x][y] == 0) {
+        this->board[x][y] = toupper(mark);  // Place the mark on the board
+        this->n_moves++;  // Increment the number of moves
+        return true;  // Successfully placed the mark
+    }
+    return false;  // Invalid move (out of bounds or cell already occupied)
+}
+
+// Display the current state of the board
+template <typename T>
+void FiveByFive_Board<T>::display_board() {
+    for (int i = 0; i < this->rows; i++) {
+        cout << "\n| ";
+        for (int j = 0; j < this->columns; j++) {
+            cout << setw(2) << this->board[i][j] << " |";  // Print each cell in the row
+        }
+        cout << "\n--------------------------";  // Separator for rows
+    }
+    cout << endl;
+}
+
+// Count the number of 3-in-a-row sequences for a given symbol (X or O)
+template <typename T>
+int FiveByFive_Board<T>::count_three_in_a_row(T symbol) {
+    int count = 0;
+
+    // Check horizontal lines for 3-in-a-row
+    for (int i = 0; i < this->rows; i++) {
+        for (int j = 0; j < this->columns - 2; j++) {
+            if (this->board[i][j] == symbol && this->board[i][j + 1] == symbol && this->board[i][j + 2] == symbol) {
+                count++;  // Found a 3-in-a-row horizontally
+            }
+        }
+    }
+
+    // Check vertical lines for 3-in-a-row
+    for (int i = 0; i < this->columns; i++) {
+        for (int j = 0; j < this->rows - 2; j++) {
+            if (this->board[j][i] == symbol && this->board[j + 1][i] == symbol && this->board[j + 2][i] == symbol) {
+                count++;  // Found a 3-in-a-row vertically
+            }
+        }
+    }
+
+    // Check diagonal lines (top-left to bottom-right)
+    for (int i = 0; i < this->rows - 2; i++) {
+        for (int j = 0; j < this->columns - 2; j++) {
+            if (this->board[i][j] == symbol && this->board[i + 1][j + 1] == symbol && this->board[i + 2][j + 2] == symbol) {
+                count++;  // Found a 3-in-a-row diagonally (top-left to bottom-right)
+            }
+        }
+    }
+
+    // Check diagonal lines (top-right to bottom-left)
+    for (int i = 0; i < this->rows - 2; i++) {
+        for (int j = 2; j < this->columns; j++) {
+            if (this->board[i][j] == symbol && this->board[i + 1][j - 1] == symbol && this->board[i + 2][j - 2] == symbol) {
+                count++;  // Found a 3-in-a-row diagonally (top-right to bottom-left)
+            }
+        }
+    }
+
+    return count;
+}
+
+// Check if the game is won by any player
+template <typename T>
+bool FiveByFive_Board<T>::is_win() {
+    if (this->n_moves == 24) {  // The game ends when 24 moves have been made
+        int count_x = count_three_in_a_row('X');
+        int count_o = count_three_in_a_row('O');
+
+        if (count_x > count_o) {
+            cout << playerXName << " wins " << endl;  // Player X wins
+            exit(0);  // Exit the game
+        }
+        else if (count_o > count_x) {
+            cout << playerOName << " wins " << endl;  // Player O wins
+            exit(0);  // Exit the game
+        }
+    }
+    return false;  // No winner yet
+}
+
+// Check if the game is a draw (no more moves and no winner)
+template <typename T>
+bool FiveByFive_Board<T>::is_draw() {
+    return (this->n_moves == 24 && !is_win());  // If 24 moves are made and no winner, it's a draw
+}
+
+// Check if the game is over (either a win or a draw)
+template <typename T>
+bool FiveByFive_Board<T>::game_is_over() {
+    return (this->n_moves == 24);  // The game is over when 24 moves have been made
+}
+
+// Constructor for FiveByFive_Player
+template <typename T>
+FiveByFive_Player<T>::FiveByFive_Player(string name, T symbol) : Player<T>(name, symbol) {}
+
+// Method to get the player's move (x, y)
+template <typename T>
+void FiveByFive_Player<T>::getmove(int& x, int& y) {
+    bool validInput = false;
+    while (!validInput) {
+        cout << "\nPlease enter your move x and y (0 to 4) separated by spaces: ";
+        cin >> x >> y;
+
+        // Check if the input is valid: must be integers between 0 and 4
+        if (cin.fail() || x < 0 || x >= 5 || y < 0 || y >= 5) {
+            cout << "Invalid input. Please enter numbers between 0 and 4 for both x and y.\n";
+            cin.clear();  // Clear the error state of cin
+            cin.ignore(numeric_limits<streamsize>::max(), '\n');  // Ignore the rest of the incorrect input in the buffer
+        }
+        else {
+            validInput = true;  // Input is valid, exit the loop
+        }
+    }
+}
+
+// Constructor for FiveByFive_Random_Player
+template <typename T>
+FiveByFive_Random_Player<T>::FiveByFive_Random_Player(T symbol) : RandomPlayer<T>(symbol) {
+    this->dimension = 5;  // Set the board dimension for random player
+    srand(static_cast<unsigned int>(time(0)));  // Seed the random number generator
+}
+
+// Method to get a random move (x, y)
+template <typename T>
+void FiveByFive_Random_Player<T>::getmove(int& x, int& y) {
+    x = rand() % 5;  // Random number between 0 and 4 for x
+    y = rand() % 5;  // Random number between 0 and 4 for y
+}
+
+#endif //_5X5_X_O_H
