@@ -1,0 +1,133 @@
+#include<iostream>  
+#include <vector>
+#include <limits> // For numeric_limits
+#include <cstdlib> // For system("cls") or system("clear")
+#include <string>
+#include <thread> // For sleep_for
+#include <chrono> // For time durations
+using namespace std;
+
+// Function to validate input and ensure it's an integer within a valid range
+int get_valid_input(const string& prompt, int min = numeric_limits<int>::min(), int max = numeric_limits<int>::max()) {
+    int value;
+    while (true) {
+        cout << prompt;
+        cin >> value;
+
+        // Check if input is valid and within range
+        if (cin.fail() || value < min || value > max) {
+            cin.clear(); // Clear error state
+            cin.ignore(numeric_limits<streamsize>::max(), '\n'); // Ignore invalid input
+            cout << "Invalid input. Please enter a number between " << min << " and " << max << ".\n";
+        }
+        else {
+            return value;
+        }
+    }
+}
+
+// Class representing the Game of Life universe
+class Universe {
+    int rows, columns; // Dimensions of the universe
+    vector<vector<int>> table; // 2D grid to store cells (0: dead, 1: alive)
+
+public:
+    // Constructor to initialize the universe dimensions
+    Universe(int r, int c) : rows(r), columns(c), table(r, vector<int>(c, 0)) {}
+
+    // Method to initialize alive cells
+    void initialize() {
+        int numAlive = get_valid_input("Enter the number of alive cells: ", 0, rows * columns);
+
+        for (int i = 0; i < numAlive; i++) {
+            int x = get_valid_input("Enter row for alive cell (0 to " + to_string(rows - 1) + "): ", 0, rows - 1);
+            int y = get_valid_input("Enter column for alive cell (0 to " + to_string(columns - 1) + "): ", 0, columns - 1);
+
+            table[x][y] = 1; // Mark the cell as alive
+        }
+    }
+
+    // Method to count alive neighbors for a given cell
+    int count_neighbors(int x, int y) {
+        int count = 0;
+        for (int i = -1; i <= 1; i++) {
+            for (int j = -1; j <= 1; j++) {
+                if (i == 0 && j == 0) continue;
+                int nx = x + i, ny = y + j;
+                if (nx >= 0 && nx < rows && ny >= 0 && ny < columns)
+                    count += table[nx][ny];
+            }
+        }
+        return count;
+    }
+
+    // Method to calculate the next generation
+    void next_generation() {
+        vector<vector<int>> new_table(rows, vector<int>(columns, 0));
+        for (int i = 0; i < rows; i++) {
+            for (int j = 0; j < columns; j++) {
+                int neighbors = count_neighbors(i, j);
+                new_table[i][j] = (table[i][j] == 1) ? (neighbors == 2 || neighbors == 3) : (neighbors == 3);
+            }
+        }
+        table = new_table;
+    }
+
+    // Method to display the universe
+    void display() {
+        system("cls"); // Clear the screen 
+        for (int i = 0; i < rows; i++) {
+            for (int j = 0; j < columns; j++) {
+                cout << table[i][j] << " "; // Display 0 or 1
+            }
+            cout << endl;
+        }
+    }
+
+    // Method to run the simulation for a specified number of generations
+    void run(int generations) {
+        for (int gen = 0; gen < generations; gen++) {
+            display(); // Display the current generation
+            cout << "Generation: " << gen + 1 << endl;
+            next_generation(); // Calculate the next generation
+            this_thread::sleep_for(chrono::milliseconds(700)); // Pause for 700ms between generations
+        }
+    }
+};
+
+int main() {
+    // Validate dimensions input
+    int rows = get_valid_input("Enter number of rows: ", 1, 100);
+    int columns = get_valid_input("Enter number of columns: ", 1, 100);
+
+    Universe u(rows, columns);
+
+    int choice;
+    do {
+        cout << "\nMenu:\n";
+        cout << "1. Initialize alive cells\n";
+        cout << "2. Display current universe\n";
+        cout << "3. Run game for a number of generations\n";
+        cout << "4. Exit\n";
+        choice = get_valid_input("Enter your choice: ", 1, 4);
+
+        switch (choice) {
+        case 1:
+            u.initialize();
+            break;
+        case 2:
+            u.display();
+            break;
+        case 3: {
+            int generations = get_valid_input("Enter number of generations: ", 1, 1000);
+            u.run(generations);
+            break;
+        }
+        case 4:
+            cout << "Goodbye!\n";
+            break;
+        }
+    } while (choice != 4);
+
+    return 0;
+}
